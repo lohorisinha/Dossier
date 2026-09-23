@@ -2,10 +2,13 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import httpx
 from bs4 import BeautifulSoup
+from celery.result import AsyncResult
 
 from .config import chroma_client, embedder, groq_client, redis_client
 from .utils import chunk_text, url_to_collection_name
 from .cache import is_url_indexed, mark_url_indexed, get_cached_answer, cache_answer
+from .celery_app import celery_app
+from .tasks import index_url_task
 
 app = FastAPI(title="dossier api", version="0.1.0")
 
@@ -45,7 +48,7 @@ async def scrape(request: ScrapeRequest):
     }
 
 @app.post("/index")
-async def index(request: ScrapeRequest):
+def index(request: ScrapeRequest):
     collection_name = url_to_collection_name(request.url)
 
     if is_url_indexed(redis_client, request.url):
@@ -56,41 +59,32 @@ async def index(request: ScrapeRequest):
             "message": "url already indexed, skipped scrape and embedding"
         }
 
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.get(request.url)
-            response.raise_for_status()
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=400, detail=f"failed to fetch url: {str(e)}")
-
-    soup = BeautifulSoup(response.text, "html.parser")
-    for tag in soup(["script", "style", "nav", "footer"]):
-        tag.decompose()
-    text = soup.get_text(separator="\n", strip=True)
-
-    chunks = chunk_text(text)
-
-    try:
-        chroma_client.delete_collection(name=collection_name)
-    except Exception:
-        pass
-
-    collection = chroma_client.create_collection(name=collection_name)
-    embeddings = embedder.encode(chunks).tolist()
-    collection.add(
-        documents=chunks,
-        embeddings=embeddings,
-        ids=[f"chunk_{i}" for i in range(len(chunks))]
-    )
-
-    mark_url_indexed(redis_client, request.url)
+    task = index_url_task.delay(request.url)
 
     return {
         "url": request.url,
-        "chunks_indexed": len(chunks),
-        "collection": collection_name,
-        "cached": False
+        "job_id": task.id,
+        "cached": False,
+        "message": "indexing started, poll /status/{job_id} for progress"
     }
+
+@app.get("/status/{job_id}")
+def status(job_id: str):
+    result = AsyncResult(job_id, app=celery_app)
+
+    response = {
+        "job_id": job_id,
+        "ready": result.ready(),
+        "status": result.status,
+    }
+
+    if result.ready():
+        if result.successful():
+            response["result"] = result.result
+        else:
+            response["error"] = str(result.result)
+
+    return response
 
 @app.post("/query")
 def query(request: QueryRequest):
