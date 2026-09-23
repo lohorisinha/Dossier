@@ -24,8 +24,3 @@ celery_app.conf.update(
     },
     imports=("backend.app.tasks",),
 )
-
-
-@celery_app.task
-def add(x, y):
-    return x + y
