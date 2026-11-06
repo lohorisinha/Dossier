@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 310" width="1200" height="310" role="img" aria-label="Dossier, an internship research agent">
+  <rect x="28" y="28" width="1144" height="264" fill="#1B1623"/>
+  <rect x="16" y="16" width="1144" height="264" fill="#FDF1E2" stroke="#1B1623" stroke-width="6"/>
+
+  <text x="64" y="76" font-family="'Courier New', Courier, monospace" font-size="22" font-weight="700" letter-spacing="4" fill="#1B1623">INTERNSHIP RESEARCH AGENT</text>
+  <text x="58" y="190" font-family="'Arial Black', Impact, 'Helvetica Neue', Arial, sans-serif" font-size="124" font-weight="900" letter-spacing="-3" fill="#1B1623">DOSSIER</text>
+  <text x="64" y="240" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" fill="#655A7C">Ask anything. Answers come only from the pages you indexed.</text>
+
+  <rect x="886" y="58" width="240" height="56" fill="#1B1623"/>
+  <rect x="880" y="52" width="240" height="56" fill="#AB92BF" stroke="#1B1623" stroke-width="4"/>
+  <text x="1000" y="87" text-anchor="middle" font-family="'Courier New', Courier, monospace" font-size="20" font-weight="700" letter-spacing="1" fill="#1B1623">FASTAPI + CELERY</text>
+
+  <rect x="886" y="128" width="240" height="56" fill="#1B1623"/>
+  <rect x="880" y="122" width="240" height="56" fill="#655A7C" stroke="#1B1623" stroke-width="4"/>
+  <text x="1000" y="157" text-anchor="middle" font-family="'Courier New', Courier, monospace" font-size="20" font-weight="700" letter-spacing="1" fill="#FDF1E2">CHROMADB + RAG</text>
+
+  <rect x="886" y="198" width="240" height="56" fill="#1B1623"/>
+  <rect x="880" y="192" width="240" height="56" fill="#A9D6B4" stroke="#1B1623" stroke-width="4"/>
+  <text x="1000" y="227" text-anchor="middle" font-family="'Courier New', Courier, monospace" font-size="20" font-weight="700" letter-spacing="1" fill="#1B1623">REACT + VITE</text>
+</svg>
