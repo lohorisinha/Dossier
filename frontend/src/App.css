@@ -1,0 +1,158 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: var(--border);
+}
+
+.steps {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.card > * + * {
+  margin-top: 1rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.actions + .url-list {
+  margin-top: 1.5rem;
+}
+
+.url-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--surface);
+  border: var(--border);
+}
+
+.url-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.url-row + .url-row {
+  border-top: 2px solid var(--ink);
+}
+
+.url-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.url-text {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.url-message {
+  opacity: 0.7;
+}
+
+.query {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  padding: 0.35rem 0.7rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  font: 700 0.78rem var(--font-mono);
+  cursor: pointer;
+}
+
+.chip:not(.chip--active):hover {
+  background: var(--amethyst-soft);
+}
+
+.chip--active {
+  background: var(--amethyst);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.thread-empty {
+  opacity: 0.7;
+}
+
+.exchange {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bubble {
+  padding: 1rem 1.25rem;
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.bubble > * + * {
+  margin-top: 0.5rem;
+}
+
+.bubble--question {
+  align-self: flex-end;
+  max-width: 85%;
+  background: var(--amethyst);
+}
+
+.bubble--answer {
+  align-self: flex-start;
+  width: 100%;
+  background: var(--surface);
+}
+
+.composer {
+  position: sticky;
+  bottom: 1rem;
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--linen);
+  border: var(--border);
+  box-shadow: var(--shadow);
+}
+
+.composer .field {
+  flex: 1;
+  resize: none;
+}
+
+@media (max-width: 600px) {
+  .composer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
