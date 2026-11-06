@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import httpx
 from bs4 import BeautifulSoup
@@ -11,6 +12,16 @@ from .celery_app import celery_app
 from .tasks import index_url_task
 
 app = FastAPI(title="dossier api", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class ScrapeRequest(BaseModel):
     url: str
@@ -103,7 +114,7 @@ def query(request: QueryRequest):
         raise HTTPException(status_code=404, detail="url not indexed yet. call /index first.")
 
     question_embedding = embedder.encode([request.question]).tolist()
-    results = collection.query(query_embeddings=question_embedding, n_results=3)
+    results = collection.query(query_embeddings=question_embedding, n_results=5)
     retrieved_chunks = "\n\n".join(results['documents'][0])
 
     prompt = f"""You are a research assistant. Answer the user's question using only the content below. If the answer is not in the content, say "I could not find that in the provided page."
