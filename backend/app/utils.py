@@ -14,6 +14,9 @@ def url_to_collection_name(url: str) -> str:
     digest = hashlib.sha256(url.encode()).hexdigest()[:12]
     return f"{readable}_{digest}" if readable else digest
 
+def query_cache_prefix(url: str) -> str:
+    return f"query:{hashlib.sha256(url.encode()).hexdigest()[:16]}:"
+
 def make_query_cache_key(url: str, question: str) -> str:
-    raw = f"{url}::{question}"
-    return "query:" + hashlib.sha256(raw.encode()).hexdigest()
+    digest = hashlib.sha256(question.encode()).hexdigest()
+    return f"{query_cache_prefix(url)}{digest}"

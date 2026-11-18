@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from .celery_app import celery_app
 from .config import chroma_client, embedder, redis_client
 from .utils import chunk_text, url_to_collection_name
-from .cache import mark_url_indexed
+from .cache import mark_url_indexed, clear_url_cache
 
 BROWSER_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
@@ -40,6 +40,7 @@ def index_url_task(url: str) -> dict:
     )
 
     mark_url_indexed(redis_client, url)
+    clear_url_cache(redis_client, url)
 
     return {
         "url": url,

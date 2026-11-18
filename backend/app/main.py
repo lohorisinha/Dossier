@@ -7,7 +7,14 @@ from celery.result import AsyncResult
 
 from .config import chroma_client, embedder, groq_client, redis_client
 from .utils import chunk_text, url_to_collection_name
-from .cache import is_url_indexed, mark_url_indexed, get_cached_answer, cache_answer
+from .cache import (
+    is_url_indexed,
+    mark_url_indexed,
+    unmark_url_indexed,
+    clear_url_cache,
+    get_cached_answer,
+    cache_answer,
+)
 from .celery_app import celery_app
 from .tasks import index_url_task
 
@@ -77,6 +84,34 @@ def index(request: ScrapeRequest):
         "job_id": task.id,
         "cached": False,
         "message": "indexing started, poll /status/{job_id} for progress"
+    }
+
+@app.post("/refresh")
+def refresh(request: ScrapeRequest):
+    task = index_url_task.delay(request.url)
+
+    return {
+        "url": request.url,
+        "job_id": task.id,
+        "cached": False,
+        "message": "refresh started, poll /status/{job_id} for progress"
+    }
+
+@app.delete("/index")
+def delete_index(url: str):
+    collection_name = url_to_collection_name(url)
+    try:
+        chroma_client.delete_collection(name=collection_name)
+    except Exception:
+        pass
+
+    unmark_url_indexed(redis_client, url)
+    cleared = clear_url_cache(redis_client, url)
+
+    return {
+        "url": url,
+        "deleted": True,
+        "cache_entries_cleared": cleared
     }
 
 @app.get("/status/{job_id}")
