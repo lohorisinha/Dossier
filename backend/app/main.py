@@ -99,11 +99,12 @@ def status(job_id: str):
 
 @app.post("/query")
 def query(request: QueryRequest):
-    cached_answer = get_cached_answer(redis_client, request.url, request.question)
-    if cached_answer is not None:
+    cached = get_cached_answer(redis_client, request.url, request.question)
+    if cached is not None:
         return {
             "question": request.question,
-            "answer": cached_answer,
+            "answer": cached["answer"],
+            "chunks_used": cached["chunks"],
             "cached": True
         }
 
@@ -115,7 +116,8 @@ def query(request: QueryRequest):
 
     question_embedding = embedder.encode([request.question]).tolist()
     results = collection.query(query_embeddings=question_embedding, n_results=5)
-    retrieved_chunks = "\n\n".join(results['documents'][0])
+    chunks = results["documents"][0]
+    retrieved_chunks = "\n\n".join(chunks)
 
     prompt = f"""You are a research assistant. Answer the user's question using only the content below. If the answer is not in the content, say "I could not find that in the provided page."
     --- PAGE CONTENT ---
@@ -129,11 +131,11 @@ def query(request: QueryRequest):
     )
     answer = chat.choices[0].message.content
 
-    cache_answer(redis_client, request.url, request.question, answer)
+    cache_answer(redis_client, request.url, request.question, answer, chunks)
 
     return {
         "question": request.question,
         "answer": answer,
-        "chunks_used": results["documents"][0],
+        "chunks_used": chunks,
         "cached": False
     }

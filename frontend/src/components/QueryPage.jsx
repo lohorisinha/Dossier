@@ -50,14 +50,14 @@ export default function QueryPage({ urls, onBack }) {
       ...prev,
       [url]: [
         ...(prev[url] ?? []),
-        { id, question, status: "loading", answer: "", error: "" },
+        { id, question, status: "loading", answer: "", chunks: [], error: "" },
       ],
     }));
     setInput("");
 
     try {
-      const answer = await askQuestion(url, question);
-      patch(url, id, { status: "done", answer });
+      const { answer, chunks } = await askQuestion(url, question);
+      patch(url, id, { status: "done", answer, chunks });
     } catch (err) {
       const error =
         err instanceof TypeError
@@ -128,9 +128,25 @@ export default function QueryPage({ urls, onBack }) {
                 </>
               )}
               {message.status === "done" && (
-                <div className="prose">
-                  <ReactMarkdown>{message.answer}</ReactMarkdown>
-                </div>
+                <>
+                  <div className="prose">
+                    <ReactMarkdown>{message.answer}</ReactMarkdown>
+                  </div>
+                  {message.chunks.length > 0 && (
+                    <details className="sources">
+                      <summary className="label">
+                        Sources ({message.chunks.length})
+                      </summary>
+                      <ol className="sources-list">
+                        {message.chunks.map((chunk, index) => (
+                          <li key={index} className="source-chunk">
+                            {chunk}
+                          </li>
+                        ))}
+                      </ol>
+                    </details>
+                  )}
+                </>
               )}
             </div>
           </div>

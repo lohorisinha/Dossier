@@ -1,7 +1,7 @@
 const BASE_URL = "http://127.0.0.1:8000";
 
 const POLL_INTERVAL_MS = 2000;
-const MAX_POLL_ATTEMPTS = 150; // 150 x 2s = 5 minutes
+const MAX_POLL_ATTEMPTS = 150;
 
 async function request(path, options = {}) {
   const response = await fetch(`${BASE_URL}${path}`, {
@@ -15,7 +15,7 @@ async function request(path, options = {}) {
       const body = await response.json();
       if (body.detail) detail = body.detail;
     } catch {
-      // response had no JSON body, keep the default message
+      detail = `Request failed with status ${response.status}`;
     }
     throw new Error(detail);
   }
@@ -23,8 +23,6 @@ async function request(path, options = {}) {
   return response.json();
 }
 
-// Starts indexing. Returns { cached, jobId }.
-// If the URL was already indexed, cached is true and jobId is null.
 export async function indexUrl(url) {
   const data = await request("/index", {
     method: "POST",
@@ -33,8 +31,6 @@ export async function indexUrl(url) {
   return { cached: data.cached, jobId: data.job_id ?? null };
 }
 
-// Polls /status/{jobId} every 2 seconds.
-// Resolves when the job succeeds, rejects if it fails or takes too long.
 export async function waitForJob(jobId) {
   for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
     const data = await request(`/status/${jobId}`);
@@ -49,11 +45,10 @@ export async function waitForJob(jobId) {
   throw new Error("Indexing timed out. Is the Celery worker running?");
 }
 
-// Asks a question about an indexed URL. Returns the answer string.
 export async function askQuestion(url, question) {
   const data = await request("/query", {
     method: "POST",
     body: JSON.stringify({ url, question }),
   });
-  return data.answer;
+  return { answer: data.answer, chunks: data.chunks_used ?? [] };
 }

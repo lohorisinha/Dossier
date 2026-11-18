@@ -156,3 +156,33 @@
     align-items: stretch;
   }
 }
+
+.sources {
+  margin-top: 1rem;
+  background: var(--linen);
+  border: var(--border);
+}
+
+.sources summary {
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+}
+
+.sources[open] summary {
+  border-bottom: 2px solid var(--ink);
+}
+
+.sources-list {
+  margin: 0;
+  padding: 0.75rem 0.75rem 0.75rem 2rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.source-chunk {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
