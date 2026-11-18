@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { askQuestion } from "../api";
+import { askQuestion, refreshUrl, removeUrl } from "../api";
 import useLocalStorage from "../useLocalStorage";
 
 const EMPTY = [];
@@ -28,14 +28,23 @@ function reviveThreads(saved) {
   return revived;
 }
 
-export default function QueryPage({ urls, onBack }) {
+function describeError(err) {
+  return err instanceof TypeError
+    ? "Could not reach the backend. Is uvicorn running?"
+    : err.message;
+}
+
+export default function QueryPage({ urls, onBack, onRemove }) {
   const [activeUrl, setActiveUrl] = useState(urls[0]);
   const [threads, setThreads] = useLocalStorage("dossier:threads", {}, reviveThreads);
   const [input, setInput] = useState("");
+  const [working, setWorking] = useState("");
+  const [notice, setNotice] = useState(null);
   const endRef = useRef(null);
 
-  const messages = threads[activeUrl] ?? EMPTY;
-  const busy = messages.some((message) => message.status === "loading");
+  const current = urls.includes(activeUrl) ? activeUrl : urls[0];
+  const messages = threads[current] ?? EMPTY;
+  const busy = working !== "" || messages.some((message) => message.status === "loading");
 
   useEffect(() => {
     if (messages.length === 0) return;
@@ -56,7 +65,7 @@ export default function QueryPage({ urls, onBack }) {
     const question = input.trim();
     if (!question || busy) return;
 
-    const url = activeUrl;
+    const url = current;
     const id = crypto.randomUUID();
 
     setThreads((prev) => ({
@@ -72,11 +81,45 @@ export default function QueryPage({ urls, onBack }) {
       const { answer, chunks } = await askQuestion(url, question);
       patch(url, id, { status: "done", answer, chunks });
     } catch (err) {
-      const error =
-        err instanceof TypeError
-          ? "Could not reach the backend. Is uvicorn running?"
-          : err.message;
-      patch(url, id, { status: "failed", error });
+      patch(url, id, { status: "failed", error: describeError(err) });
+    }
+  }
+
+  async function handleRefresh() {
+    const url = current;
+    setWorking("refresh");
+    setNotice(null);
+    try {
+      await refreshUrl(url);
+      setNotice({ url, kind: "done", text: "Re-scraped. New questions use the fresh page." });
+    } catch (err) {
+      setNotice({ url, kind: "failed", text: describeError(err) });
+    } finally {
+      setWorking("");
+    }
+  }
+
+  async function handleRemove() {
+    const url = current;
+    const confirmed = window.confirm(
+      `Remove ${shortLabel(url)}? This deletes its index and its chat history.`
+    );
+    if (!confirmed) return;
+
+    setWorking("remove");
+    setNotice(null);
+    try {
+      await removeUrl(url);
+      setThreads((prev) => {
+        const next = { ...prev };
+        delete next[url];
+        return next;
+      });
+      onRemove(url);
+    } catch (err) {
+      setNotice({ url, kind: "failed", text: describeError(err) });
+    } finally {
+      setWorking("");
     }
   }
 
@@ -85,6 +128,8 @@ export default function QueryPage({ urls, onBack }) {
       handleSubmit(event);
     }
   }
+
+  const visibleNotice = notice && notice.url === current ? notice : null;
 
   return (
     <section className="query">
@@ -98,8 +143,8 @@ export default function QueryPage({ urls, onBack }) {
               <button
                 key={url}
                 type="button"
-                className={`chip ${url === activeUrl ? "chip--active" : ""}`}
-                aria-pressed={url === activeUrl}
+                className={`chip ${url === current ? "chip--active" : ""}`}
+                aria-pressed={url === current}
                 onClick={() => setActiveUrl(url)}
               >
                 {shortLabel(url)}
@@ -107,12 +152,36 @@ export default function QueryPage({ urls, onBack }) {
             ))}
           </div>
         ) : (
-          <p className="label">{shortLabel(activeUrl)}</p>
+          <p className="label">{shortLabel(current)}</p>
         )}
 
-        <button type="button" className="btn btn--ghost" onClick={onBack}>
-          Index more links
-        </button>
+        <div className="actions">
+          <button type="button" className="btn btn--ghost" onClick={onBack}>
+            Index more links
+          </button>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleRefresh}
+            disabled={busy}
+          >
+            {working === "refresh" ? "Refreshing..." : "Refresh page"}
+          </button>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleRemove}
+            disabled={busy}
+          >
+            {working === "remove" ? "Removing..." : "Remove"}
+          </button>
+        </div>
+
+        {visibleNotice && (
+          <p className={visibleNotice.kind === "failed" ? "tag tag--failed" : "tag tag--done"}>
+            {visibleNotice.text}
+          </p>
+        )}
       </div>
 
       <div className="thread">

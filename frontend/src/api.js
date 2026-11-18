@@ -45,6 +45,20 @@ export async function waitForJob(jobId) {
   throw new Error("Indexing timed out. Is the Celery worker running?");
 }
 
+export async function refreshUrl(url) {
+  const data = await request("/refresh", {
+    method: "POST",
+    body: JSON.stringify({ url }),
+  });
+  return waitForJob(data.job_id);
+}
+
+export async function removeUrl(url) {
+  return request(`/index?url=${encodeURIComponent(url)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function askQuestion(url, question) {
   const data = await request("/query", {
     method: "POST",
