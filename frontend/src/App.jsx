@@ -1,6 +1,7 @@
 import { useState } from "react";
 import IndexPage from "./components/IndexPage";
 import QueryPage from "./components/QueryPage";
+import useLocalStorage from "./useLocalStorage";
 import "./App.css";
 
 function Header({ step }) {
@@ -23,8 +24,8 @@ function Header({ step }) {
 }
 
 export default function App() {
-  const [step, setStep] = useState("index");
-  const [indexedUrls, setIndexedUrls] = useState([]);
+  const [indexedUrls, setIndexedUrls] = useLocalStorage("dossier:urls", []);
+  const [step, setStep] = useState(indexedUrls.length > 0 ? "query" : "index");
 
   function handleContinue(urls) {
     setIndexedUrls((prev) => [...new Set([...prev, ...urls])]);

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { askQuestion } from "../api";
+import useLocalStorage from "../useLocalStorage";
 
 const EMPTY = [];
 
@@ -15,9 +16,21 @@ function shortLabel(url) {
   }
 }
 
+function reviveThreads(saved) {
+  const revived = {};
+  for (const [url, messages] of Object.entries(saved)) {
+    revived[url] = messages.map((message) =>
+      message.status === "loading"
+        ? { ...message, status: "failed", error: "Interrupted by a page refresh. Ask again." }
+        : message
+    );
+  }
+  return revived;
+}
+
 export default function QueryPage({ urls, onBack }) {
   const [activeUrl, setActiveUrl] = useState(urls[0]);
-  const [threads, setThreads] = useState({});
+  const [threads, setThreads] = useLocalStorage("dossier:threads", {}, reviveThreads);
   const [input, setInput] = useState("");
   const endRef = useRef(null);
 
