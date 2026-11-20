@@ -186,3 +186,93 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(27, 22, 35, 0.6);
+}
+
+.modal {
+  width: 100%;
+  max-width: 28rem;
+  box-shadow: var(--shadow);
+}
+
+.btn--danger {
+  background: #f0907f;
+  color: var(--ink);
+}
+
+.chip-group {
+  display: inline-flex;
+}
+
+.chip-remove {
+  margin-left: -2px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.chip-remove:not(.chip--active):hover {
+  background: var(--coral, #f0907f);
+}
+
+.chip-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.link-entry {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.link-entry .field {
+  flex: 1;
+  min-width: 0;
+}
+
+.url-row-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.url-row-end {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.url-index {
+  min-width: 1.5rem;
+  font: 700 0.78rem var(--font-mono);
+}
+
+.url-remove {
+  padding: 0.2rem 0.5rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  font: 700 0.95rem var(--font-mono);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.url-remove:hover:not(:disabled) {
+  background: #f0907f;
+}
+
+.url-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { askQuestion, refreshUrl, removeUrl } from "../api";
 import useLocalStorage from "../useLocalStorage";
 
@@ -29,7 +30,7 @@ function reviveThreads(saved) {
 }
 
 function describeError(err) {
-  return err instanceof TypeError
+  return err instanceof TypeError && /fetch/i.test(err.message)
     ? "Could not reach the backend. Is uvicorn running?"
     : err.message;
 }
@@ -40,6 +41,7 @@ export default function QueryPage({ urls, onBack, onRemove }) {
   const [input, setInput] = useState("");
   const [working, setWorking] = useState("");
   const [notice, setNotice] = useState(null);
+  const [removing, setRemoving] = useState(null);
   const endRef = useRef(null);
 
   const current = urls.includes(activeUrl) ? activeUrl : urls[0];
@@ -50,6 +52,15 @@ export default function QueryPage({ urls, onBack, onRemove }) {
     if (messages.length === 0) return;
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!removing) return;
+    function onKey(event) {
+      if (event.key === "Escape") setRemoving(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [removing]);
 
   function patch(url, id, changes) {
     setThreads((prev) => ({
@@ -99,13 +110,9 @@ export default function QueryPage({ urls, onBack, onRemove }) {
     }
   }
 
-  async function handleRemove() {
-    const url = current;
-    const confirmed = window.confirm(
-      `Remove ${shortLabel(url)}? This deletes its index and its chat history.`
-    );
-    if (!confirmed) return;
-
+  async function handleConfirmRemove() {
+    const url = removing;
+    setRemoving(null);
     setWorking("remove");
     setNotice(null);
     try {
@@ -117,7 +124,7 @@ export default function QueryPage({ urls, onBack, onRemove }) {
       });
       onRemove(url);
     } catch (err) {
-      setNotice({ url, kind: "failed", text: describeError(err) });
+      setNotice({ url: current, kind: "failed", text: describeError(err) });
     } finally {
       setWorking("");
     }
@@ -137,23 +144,33 @@ export default function QueryPage({ urls, onBack, onRemove }) {
         <p className="label">Step 2</p>
         <h2>Ask anything about this company</h2>
 
-        {urls.length > 1 ? (
-          <div className="chips">
-            {urls.map((url) => (
-              <button
-                key={url}
-                type="button"
-                className={`chip ${url === current ? "chip--active" : ""}`}
-                aria-pressed={url === current}
-                onClick={() => setActiveUrl(url)}
-              >
-                {shortLabel(url)}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <p className="label">{shortLabel(current)}</p>
-        )}
+        <div className="chips">
+          {urls.map((url) => {
+            const active = url === current;
+            return (
+              <div key={url} className="chip-group">
+                <button
+                  type="button"
+                  className={`chip ${active ? "chip--active" : ""}`}
+                  aria-pressed={active}
+                  onClick={() => setActiveUrl(url)}
+                >
+                  {shortLabel(url)}
+                </button>
+                <button
+                  type="button"
+                  className={`chip chip-remove ${active ? "chip--active" : ""}`}
+                  aria-label={`Remove ${shortLabel(url)}`}
+                  title="Remove this link"
+                  onClick={() => setRemoving(url)}
+                  disabled={busy}
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
+        </div>
 
         <div className="actions">
           <button type="button" className="btn btn--ghost" onClick={onBack}>
@@ -165,15 +182,7 @@ export default function QueryPage({ urls, onBack, onRemove }) {
             onClick={handleRefresh}
             disabled={busy}
           >
-            {working === "refresh" ? "Refreshing..." : "Refresh page"}
-          </button>
-          <button
-            type="button"
-            className="btn btn--ghost"
-            onClick={handleRemove}
-            disabled={busy}
-          >
-            {working === "remove" ? "Removing..." : "Remove"}
+            {working === "refresh" ? "Refreshing..." : "Refresh selected page"}
           </button>
         </div>
 
@@ -212,7 +221,7 @@ export default function QueryPage({ urls, onBack, onRemove }) {
               {message.status === "done" && (
                 <>
                   <div className="prose">
-                    <ReactMarkdown>{message.answer}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.answer}</ReactMarkdown>
                   </div>
                   {message.chunks.length > 0 && (
                     <details className="sources">
@@ -250,6 +259,38 @@ export default function QueryPage({ urls, onBack, onRemove }) {
           Send
         </button>
       </form>
+
+      {removing && (
+        <div className="modal-backdrop" onClick={() => setRemoving(null)}>
+          <div
+            className="card modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="remove-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="label">Remove link</p>
+            <h2 id="remove-title">Delete this dossier?</h2>
+            <p className="url-text">{shortLabel(removing)}</p>
+            <p className="label">
+              This deletes its index and its chat history. You can index it again later.
+            </p>
+            <div className="actions">
+              <button type="button" className="btn btn--danger" onClick={handleConfirmRemove}>
+                Yes, remove
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => setRemoving(null)}
+                autoFocus
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

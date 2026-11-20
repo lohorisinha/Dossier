@@ -26,10 +26,18 @@ function Header({ step }) {
 export default function App() {
   const [indexedUrls, setIndexedUrls] = useLocalStorage("dossier:urls", []);
   const [step, setStep] = useState(indexedUrls.length > 0 ? "query" : "index");
+  const [removed, setRemoved] = useState(null);
 
   function handleContinue(urls) {
     setIndexedUrls((prev) => [...new Set([...prev, ...urls])]);
     setStep("query");
+  }
+
+  function handleRemove(url) {
+    const remaining = indexedUrls.filter((item) => item !== url);
+    setIndexedUrls(remaining);
+    setRemoved({ url });
+    if (remaining.length === 0) setStep("index");
   }
 
   return (
@@ -37,12 +45,16 @@ export default function App() {
       <Header step={step} />
 
       <div hidden={step !== "index"}>
-        <IndexPage onContinue={handleContinue} />
+        <IndexPage onContinue={handleContinue} removed={removed} />
       </div>
 
       {indexedUrls.length > 0 && (
         <div hidden={step !== "query"}>
-          <QueryPage urls={indexedUrls} onBack={() => setStep("index")} />
+          <QueryPage
+            urls={indexedUrls}
+            onBack={() => setStep("index")}
+            onRemove={handleRemove}
+          />
         </div>
       )}
     </main>
