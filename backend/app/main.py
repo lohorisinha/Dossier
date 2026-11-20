@@ -155,6 +155,7 @@ def query(request: QueryRequest):
     retrieved_chunks = "\n\n".join(chunks)
 
     prompt = f"""You are a research assistant. Answer the user's question using only the content below. If the answer is not in the content, say "I could not find that in the provided page."
+    Write short, plain answers. Use short paragraphs or simple bullet points. Do not use tables or HTML tags.
     --- PAGE CONTENT ---
     {retrieved_chunks}
     --- END OF PAGE CONTENT ---
